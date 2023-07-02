@@ -1,6 +1,9 @@
 import pygame
 from enum import Enum
 
+import Box2D
+from Box2D.b2 import (world, edgeShape, polygonShape, dynamicBody, staticBody)
+
 class PlatformStyle(Enum):
     GRASS = 1
     CONCRETE = 2
@@ -11,6 +14,26 @@ class Platform(pygame.sprite.Sprite):
         super().__init__()
         self.rect = pygame.Rect(x, y, width, height)
         self.set_style(style)
+        self.body = None 
+
+    def create_body(self, world):
+        if self.body is not None:
+            world.DestroyBody(self.body)  # Remove the existing body if it exists
+
+        body_def = Box2D.b2BodyDef()
+        body_def.position = (self.rect.x, self.rect.y)  # Set the initial position
+        body_def.type = Box2D.b2_staticBody  # Set as a static body (does not move)
+        self.body = world.CreateBody(body_def)
+        self.body.userData = self
+
+        shape = Box2D.b2PolygonShape()
+        shape.SetAsBox(self.rect.width / 2, self.rect.height / 2)  # Set the shape as a box
+        fixture_def = Box2D.b2FixtureDef()
+        fixture_def.shape = shape
+        fixture_def.density = 1  # Set the density
+        fixture_def.friction = 0.5  # Set the friction
+        f = self.body.CreateFixture(fixture_def)
+        f.userData = "platform"
 
     def set_style(self, style):
         if style == PlatformStyle.GRASS:
